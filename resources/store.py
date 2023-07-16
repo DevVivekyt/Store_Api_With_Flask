@@ -1,42 +1,65 @@
 import uuid
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import stores
+from schemas import StoreSchema
+from models import StoreModel
+from sqlalchemy.exc import IntegrityError
+from db import db
 
 
-blp = Blueprint("stores", __name__, description="Oprations on Store")
+blp = Blueprint("stores", "stores", description="Operations on Store")
 
 @blp.route("/store")
 class StoreList(MethodView):
+    @blp.response(200, StoreSchema(many=True))
     def get(self):
-        return {"stores": list(stores.values())}
+        stores = StoreModel.query.all()
+        result = stores
+        return result
 
-    def post(self):
-        store_data = request.get_json()
-        if "name" not in store_data:
-            abort(400, message="Bad request. Ensure 'name' is included in JSON payload")
-        for store in stores.values():
-            if store_data["name"] == store["name"]:
-                abort(400, message=f"Store already exists")
-        store_id = uuid.uuid4().hex
-        new_store = {**store_data, "id": store_id}
-        stores[store_id] = new_store
-        return new_store, 201
+
+
+    @blp.arguments(StoreSchema)
+    @blp.response(200, StoreSchema)
+    def post(self, store_data):
+        existing_store = StoreModel.query.filter_by(name=store_data["name"]).first()
+        if existing_store:
+            abort(400, message="Store already exists")
+
+        store = StoreModel(**store_data)
+        db.session.add(store)
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            abort(500, message="An error occurred while inserting the store")
+
+        return store
     
 
 
 @blp.route("/store/<string:store_id>")
 class Store(MethodView):
+    @blp.response(200, StoreSchema)
     def get(self, store_id):
         try:
-            return stores[store_id]
-        except KeyError:
+            store = StoreModel.query.filter_by(id=store_id).first()
+            return store
+        except IntegrityError:
             abort(404, message="Store not found")
 
+    @blp.response(204)
     def delete(self, store_id):
-         try:
-            del stores[store_id]
-            return {"message": "Store deleted"}
-         except KeyError:
-            abort(404, message="Store not found")
+        try:
+            store = StoreModel.query.get(store_id)
+            if store:
+                db.session.delete(store)
+                db.session.commit()
+                return {"message": "Store deleted"}
+            else:
+                abort(404, message="Store not found")
+        except IntegrityError as e:
+            print("Error:", str(e))
+            abort(500, message="An error occurred while deleting the store")
+
