@@ -3,11 +3,32 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from schemas import StoreSchema
 from models import StoreModel
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from flask import make_response,jsonify
+from models.action_log import save_error_to_action_log
+
 from db import db
 
 
 blp = Blueprint("stores", "stores", description="Operations on Store")
+
+@blp.errorhandler(400)
+def handler_400(error):
+    error_message = str(error)
+    save_error_to_action_log(error_message,"Store already exists", "stores")
+    return make_response(jsonify({"message": "Store already exists"}), 400)
+
+@blp.errorhandler(404)
+def handler_404(error):
+    error_message = str(error)
+    save_error_to_action_log(error_message,"Not found", "stores")
+    return make_response(jsonify({"message": "Not found"}), 404)
+
+@blp.errorhandler(500)
+def handler_500(error):
+    error_message = str(error)
+    save_error_to_action_log(error_message,"Server Error" "stores")
+    return make_response(jsonify({"message": "Server Error"}), 500)
 
 @blp.route("/store")
 class StoreList(MethodView):
@@ -33,6 +54,8 @@ class StoreList(MethodView):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
+            abort(400, message="A Store with name already exista")
+        except SQLAlchemyError:
             abort(500, message="An error occurred while inserting the store")
 
         return store
@@ -49,7 +72,7 @@ class Store(MethodView):
         except IntegrityError:
             abort(404, message="Store not found")
 
-    @blp.response(204)
+    @blp.response(200)
     def delete(self, store_id):
         try:
             store = StoreModel.query.get(store_id)

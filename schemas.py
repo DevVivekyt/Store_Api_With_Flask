@@ -6,7 +6,6 @@ class ItemSchema(Schema):
     name = fields.Str(required=True)
     price = fields.Float(required=True)
     category = fields.Str(required=True)
-    sub_category = fields.Str(required=True)
     store_id = fields.Str(required=True)
     store = fields.Nested('StoreSchema',dump_only=True)
 
@@ -14,6 +13,8 @@ class ItemSchema(Schema):
 class StoreSchema(Schema):
     id = fields.Str(dump_only=True)
     name = fields.Str(required=True)
+    items = fields.Nested('ItemSchema',dump_only=True)
+
 
 class ItemUpdateSchema(Schema):
     name = fields.Str()
