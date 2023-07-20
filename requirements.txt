@@ -7,3 +7,4 @@ pyodbc  #For SQL Connection
 flask-jwt-extended  #For Generate JWT Token
 passlib  #Hash your password
 flask-migrate #For database migration
+gunicorn # For product
