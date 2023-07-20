@@ -6,3 +6,4 @@ flask-sqlalchemy #For Query our database and get result back
 pyodbc  #For SQL Connection
 flask-jwt-extended  #For Generate JWT Token
 passlib  #Hash your password
+flask-migrate #For database migration

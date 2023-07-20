@@ -61,7 +61,7 @@ class Items(MethodView):
 
     @blp.arguments(ItemUpdateSchema)
     @blp.response(200, ItemSchema)
-    @jwt_required()
+    @jwt_required(fresh=True)
     def put(self, item_data, item_id):
         item = ItemModel.query.get(item_id)
         if item:
