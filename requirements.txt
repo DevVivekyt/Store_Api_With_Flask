@@ -1,7 +1,8 @@
 flask
-flask-smorest
-python-dotenv
-sqlalchemy
-flask-sqlalchemy
-pyodbc
-alembic
+flask-smorest 
+python-dotenv #For envirment veriable
+sqlalchemy #For creating table and send data and get data
+flask-sqlalchemy #For Query our database and get result back
+pyodbc  #For SQL Connection
+flask-jwt-extended  #For Generate JWT Token
+passlib  #Hash your password
